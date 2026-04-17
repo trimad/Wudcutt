@@ -1,0 +1,26 @@
+{
+  "artist": "Hans Holbein",
+  "dimensions": "3101x4410",
+  "downloaded_at": "2026-04-17T17:41:09.492574+00:00",
+  "license_label": "cc0",
+  "license_reason": "cc0",
+  "medium": "woodcut",
+  "notes": "Candidate returned from Wikimedia Commons search",
+  "preview_url": "https://upload.wikimedia.org/wikipedia/commons/d/d4/Hans_Holbein_-_Dance_of_Death-_The_Coat_of_Arms_of_Death_-_1929.171_-_Cleveland_Museum_of_Art.tif",
+  "provider": "wikimedia",
+  "quality_grade": "A",
+  "quality_reasons": [
+    "Excellent resolution for print",
+    "Commercially useful subject terms: death",
+    "Preview image available",
+    "Explicit reusable rights metadata"
+  ],
+  "quality_score": 82,
+  "slug": "holbein-dance-of-death-the-coat-of-arms-of-death-1929-171-cleveland-museum-of-art-1929",
+  "source_file_url": "https://upload.wikimedia.org/wikipedia/commons/d/d4/Hans_Holbein_-_Dance_of_Death-_The_Coat_of_Arms_of_Death_-_1929.171_-_Cleveland_Museum_of_Art.tif",
+  "source_institution": "Wikimedia Commons",
+  "source_page_url": "https://commons.wikimedia.org/wiki/File:Hans Holbein - Dance of Death- The Coat of Arms of Death - 1929.171 - Cleveland Museum of Art.tif",
+  "tags": [],
+  "title": "Dance of Death- The Coat of Arms of Death - 1929.171 - Cleveland Museum of Art",
+  "year": "1929"
+}

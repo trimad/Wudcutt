@@ -1,0 +1,25 @@
+{
+  "artist": "Albrecht D\u00fcrer",
+  "dimensions": "4000x3141",
+  "downloaded_at": "2026-04-17T17:50:38.036120+00:00",
+  "license_label": "cc0",
+  "license_reason": "cc0",
+  "medium": "woodcut",
+  "notes": "Candidate returned from Wikimedia Commons search",
+  "preview_url": "https://upload.wikimedia.org/wikipedia/commons/9/95/Albrecht_D%C3%BCrer%2C_The_Rhinoceros%2C_1515%2C_NGA_47903.jpg",
+  "provider": "wikimedia",
+  "quality_grade": "B",
+  "quality_reasons": [
+    "Excellent resolution for print",
+    "Preview image available",
+    "Explicit reusable rights metadata"
+  ],
+  "quality_score": 75,
+  "slug": "durer-the-rhinoceros-unknown",
+  "source_file_url": "https://upload.wikimedia.org/wikipedia/commons/9/95/Albrecht_D%C3%BCrer%2C_The_Rhinoceros%2C_1515%2C_NGA_47903.jpg",
+  "source_institution": "Wikimedia Commons",
+  "source_page_url": "https://commons.wikimedia.org/wiki/File:Albrecht D\u00fcrer, The Rhinoceros, 1515, NGA 47903.jpg",
+  "tags": [],
+  "title": "The Rhinoceros",
+  "year": "unknown"
+}

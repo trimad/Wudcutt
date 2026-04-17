@@ -1,0 +1,26 @@
+{
+  "artist": "Albrecht D\u00fcrer",
+  "dimensions": "2880x4000",
+  "downloaded_at": "2026-04-17T17:50:43.541383+00:00",
+  "license_label": "cc0",
+  "license_reason": "cc0",
+  "medium": "woodcut",
+  "notes": "Candidate returned from Wikimedia Commons search",
+  "preview_url": "https://upload.wikimedia.org/wikipedia/commons/7/70/Albrecht_D%C3%BCrer%2C_The_Four_Horsemen%2C_1498%2C_NGA_142352.jpg",
+  "provider": "wikimedia",
+  "quality_grade": "B",
+  "quality_reasons": [
+    "Strong resolution for print",
+    "Commercially useful subject terms: horsemen",
+    "Preview image available",
+    "Explicit reusable rights metadata"
+  ],
+  "quality_score": 72,
+  "slug": "durer-the-four-horsemen-unknown",
+  "source_file_url": "https://upload.wikimedia.org/wikipedia/commons/7/70/Albrecht_D%C3%BCrer%2C_The_Four_Horsemen%2C_1498%2C_NGA_142352.jpg",
+  "source_institution": "Wikimedia Commons",
+  "source_page_url": "https://commons.wikimedia.org/wiki/File:Albrecht D\u00fcrer, The Four Horsemen, 1498, NGA 142352.jpg",
+  "tags": [],
+  "title": "The Four Horsemen",
+  "year": "unknown"
+}

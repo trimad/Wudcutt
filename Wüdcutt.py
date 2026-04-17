@@ -1,193 +1,174 @@
+from __future__ import annotations
+
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox
-from PIL import Image, ImageTk, ImageOps
-import numpy as np
-import os
+from tkinter import filedialog, messagebox, ttk
+from pathlib import Path
 
+from PIL import ImageTk
 
-Image.MAX_IMAGE_PIXELS = None
+from wudcutt.processing import (
+    apply_threshold,
+    create_transparent_image,
+    generate_threshold_series,
+    load_image_grayscale,
+)
+
 
 class ImageApp:
-    def __init__(self, root):
+    def __init__(self, root: tk.Tk):
         self.root = root
-        self.root.title('Wüdcutt')
-        self.root.geometry("1024x1024")  # Set default siz
-        self.root.minsize(600, 400)  # Minimum size of the window
+        self.root.title("Wudcutt")
+        self.root.geometry("1100x950")
+        self.root.minsize(700, 500)
+
+        self.original_img = None
+        self.thresholded_img = None
+        self.transparent_img = None
+        self.current_preview_label = None
 
         style = ttk.Style()
-        style.theme_use('clam')  # or 'alt', 'default', 'classic', 'vista', 'xpnative'
+        style.theme_use("clam")
 
-        # Tab Control
-        tab_control = ttk.Notebook(root)
-        
-        # Tab 1
-        tab1 = ttk.Frame(tab_control)
-        tab_control.add(tab1, text='Threshold Adjuster')
-        self.setup_tab1(tab1)
+        tabs = ttk.Notebook(root)
+        self.threshold_tab = ttk.Frame(tabs)
+        self.transparency_tab = ttk.Frame(tabs)
+        self.macro_tab = ttk.Frame(tabs)
+        tabs.add(self.threshold_tab, text="Threshold Adjuster")
+        tabs.add(self.transparency_tab, text="Transparency Converter")
+        tabs.add(self.macro_tab, text="Macro")
+        tabs.pack(expand=1, fill="both")
 
-        # Tab 2
-        tab2 = ttk.Frame(tab_control)
-        tab_control.add(tab2, text='Transparency Converter')
-        self.setup_tab2(tab2)
-        
-        # Tab 3 (Macro Tab)
-        tab3 = ttk.Frame(tab_control)
-        tab_control.add(tab3, text='Macro')
-        self.setup_tab3(tab3)
-        
-        tab_control.pack(expand=1, fill="both")
+        self.setup_threshold_tab()
+        self.setup_transparency_tab()
+        self.setup_macro_tab()
 
+    def setup_threshold_tab(self):
+        button_frame = tk.Frame(self.threshold_tab)
+        button_frame.pack(fill="x")
+        slider_frame = tk.Frame(self.threshold_tab)
+        slider_frame.pack(fill="x")
+        preview_frame = tk.Frame(self.threshold_tab)
+        preview_frame.pack(fill="both", expand=True)
 
-    def setup_tab1(self, frame):
-        
-        button_frame = tk.Frame(frame)
-        button_frame.pack(fill='x')
+        tk.Button(button_frame, text="Load Image", command=lambda: self.load_image(self.threshold_label)).pack(side="left", padx=10, pady=10)
+        tk.Button(button_frame, text="Save Thresholded Image", command=lambda: self.save_current_image(self.thresholded_img)).pack(side="left", padx=10, pady=10)
 
-        slider_frame = tk.Frame(frame)
-        slider_frame.pack(fill='x')
+        self.threshold_slider = tk.Scale(slider_frame, from_=0, to=255, orient="horizontal", label="Adjust Threshold", command=lambda _value: self.adjust_threshold())
+        self.threshold_slider.set(140)
+        self.threshold_slider.pack(side="left", padx=10, pady=10, fill="x", expand=True)
 
-        preview_frame = tk.Frame(frame)
-        preview_frame.pack(fill='x')
-        
-        load_button = tk.Button(button_frame, text='Load Image', command=lambda: self.load_image(self.image_label))
-        load_button.pack(side='left', padx=10, pady=10)
+        self.threshold_label = tk.Label(preview_frame)
+        self.threshold_label.pack(fill="both", expand=True)
 
-        self.threshold_slider = tk.Scale(slider_frame, from_=0, to=255, orient='horizontal', label='Adjust Threshold')
-        self.threshold_slider.pack(side='left', padx=10, pady=10, fill='x', expand=True)
-        self.threshold_slider.bind('<B1-Motion>', self.adjust_threshold)
-        frame.bind('<Left>', self.decrease_threshold)
-        frame.bind('<Right>', self.increase_threshold)
+    def setup_transparency_tab(self):
+        button_frame = tk.Frame(self.transparency_tab)
+        button_frame.pack(fill="x")
+        preview_frame = tk.Frame(self.transparency_tab)
+        preview_frame.pack(fill="both", expand=True)
 
-        save_button = tk.Button(button_frame, text='Save Image', command=self.save_image)
-        save_button.pack(side='left', padx=10, pady=10)
+        tk.Button(button_frame, text="Load Image", command=lambda: self.load_image(self.transparency_label)).pack(side="left", padx=10, pady=10)
+        tk.Button(button_frame, text="Preview Transparent", command=self.preview_transparent).pack(side="left", padx=10, pady=10)
+        tk.Button(button_frame, text="Save Transparent PNG", command=lambda: self.save_current_image(self.transparent_img)).pack(side="left", padx=10, pady=10)
 
-        self.image_label = tk.Label(preview_frame)
-        self.image_label.pack(fill='both', expand=True)
+        help_text = tk.Label(
+            button_frame,
+            text="White pixels become transparent; darker pixels become solid black.",
+        )
+        help_text.pack(side="left", padx=10)
 
-    def setup_tab2(self, frame):
-        
-        button_frame = tk.Frame(frame)
-        button_frame.pack(fill='x')
+        self.transparency_label = tk.Label(preview_frame)
+        self.transparency_label.pack(fill="both", expand=True)
 
-        preview_frame = tk.Frame(frame)
-        preview_frame.pack(fill='x')
+    def setup_macro_tab(self):
+        button_frame = tk.Frame(self.macro_tab)
+        button_frame.pack(fill="x")
+        path_frame = tk.Frame(self.macro_tab)
+        path_frame.pack(fill="x")
+        preview_frame = tk.Frame(self.macro_tab)
+        preview_frame.pack(fill="both", expand=True)
 
-        load_button = tk.Button(button_frame, text='Load Image', command=lambda: self.load_image(self.image_label_tab2))
-        load_button.pack(side='left', padx=10, pady=10)
+        tk.Button(button_frame, text="Load Image", command=lambda: self.load_image(self.macro_label)).pack(side="left", padx=10, pady=10)
+        tk.Label(path_frame, text="Save directory:").pack(side="left", padx=(10, 2))
 
-        save_button = tk.Button(button_frame, text='Save Image', command=self.save_image)
-        save_button.pack(side='left', padx=10, pady=10)
+        default_macro_dir = Path.cwd() / "exports" / "macro"
+        self.save_directory_entry = tk.Entry(path_frame, width=70)
+        self.save_directory_entry.insert(0, str(default_macro_dir))
+        self.save_directory_entry.pack(side="left", expand=True, fill="x", padx=(0, 10))
+        tk.Button(path_frame, text="Browse", command=self.choose_macro_directory).pack(side="left", padx=10)
+        tk.Button(button_frame, text="Save Threshold Series", command=self.save_macro_images).pack(side="left", padx=10, pady=10)
 
-        self.image_label_tab2 = tk.Label(preview_frame)
-        self.image_label_tab2.pack()
-        
-    def setup_tab3(self, frame):
-        
-        button_frame = tk.Frame(frame)
-        button_frame.pack(fill='x')
+        self.macro_label = tk.Label(preview_frame)
+        self.macro_label.pack(fill="both", expand=True)
 
-        path_frame = tk.Frame(frame)
-        path_frame.pack(fill='x')
+    def choose_macro_directory(self):
+        selected = filedialog.askdirectory(initialdir=self.save_directory_entry.get() or str(Path.cwd()))
+        if selected:
+            self.save_directory_entry.delete(0, tk.END)
+            self.save_directory_entry.insert(0, selected)
 
-        preview_frame = tk.Frame(frame)
-        preview_frame.pack(fill='x')
-        
-        load_button = tk.Button(button_frame, text='Load Image', command=lambda: self.load_image(self.image_label_tab3))
-        load_button.pack(side='left', padx=10, pady=10)
-
-        # Add a label and text entry for the save directory
-        label = tk.Label(path_frame, text="Save directory:")
-        label.pack(side='left', padx=(10, 2))
-
-        self.save_directory_entry = tk.Entry(path_frame, width=50)
-        self.save_directory_entry.pack(side='left', expand=True, fill='x', padx=(0, 10))
-        self.save_directory_entry.insert(0, "C:\\Users\\Tristan\\Desktop\\Albrecht Durer-20240418T150257Z-001\\Albrecht Durer\\The Four Horsemen\\Macro")
-
-        macro_button = tk.Button(button_frame, text='Save Images', command=self.save_macro_images)
-        macro_button.pack(side='left', padx=10, pady=10)
-
-        self.image_label_tab3 = tk.Label(preview_frame)
-        self.image_label_tab3.pack()
-
-    def save_macro_images(self):
-        # Get the directory from the text entry field
-        save_directory = self.save_directory_entry.get().strip()
-        if not save_directory:
-            tk.messagebox.showerror("Error", "Save directory must not be empty.")
-            return
-
-        if self.original_img is not None:
-            # Check if the directory exists, and if not, attempt to create it
-            if not os.path.exists(save_directory):
-                try:
-                    os.makedirs(save_directory)  # Attempt to create the directory
-                except OSError as e:
-                    tk.messagebox.showerror("Error", f"Failed to create directory: {e}")
-                    return
-
-            for threshold in range(0, 255, 5):  # From 100 to 200, every 5 steps
-                img_array = np.array(self.original_img)
-                img_array = np.where(img_array > threshold, 255, 0)
-                processed_img = Image.fromarray(np.uint8(img_array))
-                file_name = f"threshold_{threshold}.png"
-                file_path = os.path.join(save_directory, file_name)
-                try:
-                    processed_img.save(file_path)  # Save directly to the specified directory
-                except Exception as e:
-                    tk.messagebox.showerror("Error", f"Failed to save image {file_name}: {e}")
-                    continue
-    
-    def load_image(self, display_label):
-        file_path = filedialog.askopenfilename()
+    def load_image(self, display_label: tk.Label):
+        file_path = filedialog.askopenfilename(filetypes=[("Images", "*.png *.jpg *.jpeg *.tif *.tiff *.webp"), ("All files", "*.*")])
         if not file_path:
             return
+        self.original_img = load_image_grayscale(file_path)
+        self.thresholded_img = apply_threshold(self.original_img, self.threshold_slider.get())
+        self.transparent_img = None
+        self.current_preview_label = display_label
+        if display_label is self.threshold_label:
+            self.update_preview(self.thresholded_img, display_label)
+        else:
+            self.update_preview(self.original_img, display_label)
 
-        self.original_img = Image.open(file_path)
-        self.original_img = ImageOps.exif_transpose(self.original_img)
-        self.original_img = ImageOps.grayscale(self.original_img)
-        self.thresholded_img = self.original_img.copy()
-        self.update_preview(self.original_img, display_label)
+    def adjust_threshold(self):
+        if self.original_img is None:
+            return
+        self.thresholded_img = apply_threshold(self.original_img, self.threshold_slider.get())
+        self.update_preview(self.thresholded_img, self.threshold_label)
 
-    def adjust_threshold(self, event):
-        if self.original_img is not None:
-            img_array = np.array(self.original_img)
-            threshold = self.threshold_slider.get()
-            img_array = np.where(img_array > threshold, 255, 0)
-            self.thresholded_img = Image.fromarray(np.uint8(img_array))
-            self.update_preview(self.thresholded_img, self.image_label)
+    def preview_transparent(self):
+        if self.original_img is None:
+            messagebox.showinfo("No image loaded", "Load an image first.")
+            return
+        base = self.thresholded_img or apply_threshold(self.original_img, self.threshold_slider.get())
+        self.transparent_img = create_transparent_image(base)
+        self.update_preview(self.transparent_img, self.transparency_label)
 
-    def decrease_threshold(self, event):
-        if self.threshold_slider.get() > 0:
-            self.threshold_slider.set(self.threshold_slider.get() - 1)
-            self.adjust_threshold(event)
+    def save_macro_images(self):
+        save_directory = self.save_directory_entry.get().strip()
+        if not save_directory:
+            messagebox.showerror("Error", "Save directory must not be empty.")
+            return
+        if self.original_img is None:
+            messagebox.showinfo("No image loaded", "Load an image first.")
+            return
 
-    def increase_threshold(self, event):
-        if self.threshold_slider.get() < 255:
-            self.threshold_slider.set(self.threshold_slider.get() + 1)
-            self.adjust_threshold(event)
+        target_dir = Path(save_directory)
+        target_dir.mkdir(parents=True, exist_ok=True)
+        for item in generate_threshold_series(self.original_img, start=0, stop=255, step=5):
+            item.image.save(target_dir / f"threshold_{item.threshold}.png")
+        messagebox.showinfo("Done", f"Saved threshold series to {target_dir}")
 
-    def update_preview(self, img, label):
-        window_width = self.root.winfo_width()
-        window_height = self.root.winfo_height()
-        max_size = (int(window_width * 0.90), int(window_height * 0.90))
+    def save_current_image(self, image):
+        if image is None:
+            messagebox.showinfo("Nothing to save", "Generate or load an image first.")
+            return
+        target = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("PNG", "*.png"), ("All files", "*.*")])
+        if target:
+            image.save(target)
 
-        img_copy = img.copy()
-        img_copy.thumbnail(max_size, Image.Resampling.LANCZOS)
+    def update_preview(self, img, label: tk.Label):
+        window_width = max(self.root.winfo_width(), 800)
+        window_height = max(self.root.winfo_height(), 600)
+        max_size = (int(window_width * 0.85), int(window_height * 0.75))
 
-        photo = ImageTk.PhotoImage(img_copy)
-        label.config(image=photo)
-        label.image = photo  # Keep a reference to prevent garbage collection
+        preview = img.copy()
+        preview.thumbnail(max_size)
+        photo = ImageTk.PhotoImage(preview)
+        label.configure(image=photo)
+        label.image = photo
 
-    def save_image(self):
-        if self.thresholded_img is not None:
-            self.thresholded_img.save(filedialog.asksaveasfilename(defaultextension=".png"))
 
-    def on_resize(self, event):
-        # Update the slider width and preview when resizing
-        if self.original_img:
-            self.update_preview(self.original_img, self.image_label)
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     root = tk.Tk()
     app = ImageApp(root)
     root.mainloop()
