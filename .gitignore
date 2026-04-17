@@ -1,1 +1,5 @@
 The Rhino/Society6/*
+__pycache__/
+*.pyc
+.pytest_cache/
+exports/*.csv
